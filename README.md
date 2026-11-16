@@ -2,9 +2,9 @@
 
 NBA Jam-style duck hunt for mobile browsers.
 
-- Left thumb: RAISE / LOWER the shotgun (lowering reloads)
+- Left thumb: RAISE / LOWER the shotgun
 - Tilt phone to aim - the front bead is locked to the exact screen center
-- Right thumb: FIRE (2 shells)
+- Right thumb: FIRE (unlimited shells, no reloading)
 - 3 straight hits = ON FIRE (2x points, wider pattern)
 
 Play: https://mtapros.github.io/duck-jam/ (enable Pages: Settings > Pages > Deploy from branch > main / root)

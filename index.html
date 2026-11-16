@@ -26,7 +26,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 <div id="rotate">Rotate to landscape</div>
 <div id="menu">
  <h1>DUCK JAM</h1>
- <div id="msg" style="font-family:Arial;font-size:16px;max-width:520px">Left thumb: RAISE / lower gun. Tilt phone to aim (bead stays dead center).<br>Right thumb: FIRE. 2 shells - lower the gun to reload. 3 straight hits = ON FIRE.</div>
+ <div id="msg" style="font-family:Arial;font-size:16px;max-width:520px">Left thumb: RAISE / lower gun. Tilt phone to aim (bead stays dead center).<br>Right thumb: FIRE - unlimited shells. 3 straight hits = ON FIRE.</div>
  <button id="start">PLAY</button>
  <label>Sensitivity <input id="sens" type="range" min="0.5" max="2.5" step="0.1" value="1.2"></label>
  <label><input id="invx" type="checkbox"> Invert left/right</label>
@@ -43,7 +43,7 @@ const S={sens:1.2,invx:false,invy:false,voice:true};
 ['sens','invx','invy','voice'].forEach(k=>$(k).addEventListener('input',e=>S[k]=e.target.type=='checkbox'?e.target.checked:+e.target.value));
 
 let view={yaw:0,pitch:12},raised=false,raiseT=0,running=false,ducks=[],fx=[],texts=[];
-let score=0,streak=0,onFire=false,shells=2,timeLeft=60,flash=0,kick=0,spawnT=1,lastGyro=0,hasGyro=false;
+let score=0,streak=0,onFire=false,timeLeft=60,flash=0,kick=0,spawnT=1,lastGyro=0,hasGyro=false;
 
 let AC;
 function audio(){if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)()}if(AC.state=='suspended')AC.resume()}
@@ -51,7 +51,6 @@ function boom(){if(!AC)return;const n=AC.sampleRate*0.6,b=AC.createBuffer(1,n,AC
  for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3);
  const s=AC.createBufferSource();s.buffer=b;const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=1800;
  const g=AC.createGain();g.gain.value=1.4;s.connect(f).connect(g).connect(AC.destination);s.start()}
-function click(){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=900;g.gain.setValueAtTime(.3,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.05);o.connect(g).connect(AC.destination);o.start();o.stop(AC.currentTime+.06)}
 function quack(){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;o.type='sawtooth';o.frequency.setValueAtTime(520,t);o.frequency.exponentialRampToValueAtTime(260,t+.18);
  g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+.22)}
 function say(t){if(!S.voice||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=1.15;u.pitch=0.8;speechSynthesis.speak(u)}
@@ -67,8 +66,8 @@ function onMotion(e){
  if(!raised||!dt)return;
  const ang=(screen.orientation&&screen.orientation.angle!=null)?screen.orientation.angle:(window.orientation||0);
  let yr,pr;
- if(ang==90){yr=-r.beta;pr=-r.gamma}
- else if(ang==270||ang==-90){yr=r.beta;pr=r.gamma}
+ if(ang==90){yr=-r.gamma;pr=-r.beta}
+ else if(ang==270||ang==-90){yr=r.gamma;pr=r.beta}
  else{yr=-r.gamma;pr=r.beta}
  if(S.invx)yr=-yr;if(S.invy)pr=-pr;
  aim(yr*dt*S.sens,pr*dt*S.sens);
@@ -79,8 +78,7 @@ cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY}});
 addEventListener('pointermove',e=>{if(!drag||!raised||hasGyro)return;aim((e.clientX-drag.x)*.08,-(e.clientY-drag.y)*.08);drag={x:e.clientX,y:e.clientY}});
 addEventListener('pointerup',()=>drag=null);
 
-function setRaised(v){raised=v;$('raise').classList.toggle('on',v);$('raise').textContent=v?'LOWER':'RAISE';
- if(!v&&shells<2){setTimeout(()=>{if(!raised){shells=2;click()}},350)}}
+function setRaised(v){raised=v;$('raise').classList.toggle('on',v);$('raise').textContent=v?'LOWER':'RAISE'}
 $('raise').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();audio();setRaised(!raised)});
 $('fire').addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();audio();fire()});
 addEventListener('keydown',e=>{if(e.code=='Space')fire();if(e.code=='KeyR')setRaised(!raised)});
@@ -89,7 +87,7 @@ $('start').onclick=async()=>{audio();await enableMotion();
  try{await document.documentElement.requestFullscreen?.();await screen.orientation?.lock?.('landscape')}catch(e){}
  if(timeLeft<=0||$('start').textContent=='PLAY AGAIN')reset();
  $('menu').style.display='none';running=true;last=performance.now();if(score==0&&timeLeft==60)shout('LET\'S HUNT!')};
-function reset(){score=0;streak=0;onFire=false;shells=2;timeLeft=60;ducks=[];fx=[];texts=[];spawnT=1}
+function reset(){score=0;streak=0;onFire=false;timeLeft=60;ducks=[];fx=[];texts=[];spawnT=1}
 
 const FOV=60;
 function ppd(){return W/FOV*(1+0.35*raiseT)}
@@ -107,8 +105,7 @@ function spawn(){
 function fire(){
  if(!running)return;
  if(!raised){shout('RAISE IT!','#fff',36,false);return}
- if(shells<=0){click();shout('RELOAD! (lower gun)','#fff',34,false);return}
- shells--;boom();flash=1;kick=1;
+ boom();flash=1;kick=1;
  const spread=(onFire?7:4.2)*ppd();
  let hits=0;
  for(const d of ducks){if(d.state!='fly')continue;const s=toScreen(d.yaw,d.pitch);
@@ -185,8 +182,7 @@ function drawHUD(){
  ctx.textAlign='left';ctx.font='32px Impact, Arial Black';ctx.lineWidth=5;ctx.strokeStyle='#000';
  const txt=(s,x,y,c)=>{ctx.strokeText(s,x,y);ctx.fillStyle=c;ctx.fillText(s,x,y)};
  txt('SCORE '+score,20,44,'#ffcc00');txt(Math.ceil(timeLeft)+'s',W/2-24,44,timeLeft<10?'#ff5252':'#fff');
- for(let i=0;i<2;i++){ctx.fillStyle=i<shells?'#d32f2f':'rgba(255,255,255,.2)';ctx.fillRect(20+i*26,62,18,38);ctx.fillStyle=i<shells?'#c9a227':'transparent';ctx.fillRect(20+i*26,90,18,10)}
- if(onFire){ctx.font='26px Impact';txt('ON FIRE x2',20,130,'#ff3d00')}
+ if(onFire){ctx.font='26px Impact';txt('ON FIRE x2',20,84,'#ff3d00')}
  if(!hasGyro&&raised){ctx.font='16px Arial';ctx.fillStyle='#fff';ctx.fillText('No gyro detected - drag to aim',20,H-150)}
  ctx.textAlign='center';
  for(const t of texts){const a=Math.min(1,t.life*2);ctx.globalAlpha=a;const sc=1+(1.6-t.life)*.15;ctx.font=`${t.size*sc}px Impact, Arial Black`;
