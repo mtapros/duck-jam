@@ -66,8 +66,8 @@ function onMotion(e){
  if(!raised||!dt)return;
  const ang=(screen.orientation&&screen.orientation.angle!=null)?screen.orientation.angle:(window.orientation||0);
  let yr,pr;
- if(ang==90){yr=-r.gamma;pr=-r.beta}
- else if(ang==270||ang==-90){yr=r.gamma;pr=r.beta}
+ if(ang==90){yr=-r.alpha;pr=-r.beta}
+ else if(ang==270||ang==-90){yr=r.alpha;pr=r.beta}
  else{yr=-r.gamma;pr=r.beta}
  if(S.invx)yr=-yr;if(S.invy)pr=-pr;
  aim(yr*dt*S.sens,pr*dt*S.sens);
